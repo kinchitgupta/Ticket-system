@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"ticket-system/internal/auth"
 	"ticket-system/internal/handlers"
 	"ticket-system/internal/middleware"
 	"ticket-system/internal/store"
@@ -13,7 +14,14 @@ import (
 
 func main() {
 	s := store.New()
-	authHandler := handlers.NewAuthHandler(s)
+
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET environment variable is required")
+	}
+	tokens := auth.NewTokenIssuer(jwtSecret)
+
+	authHandler := handlers.NewAuthHandler(s, tokens)
 	ticketHandler := handlers.NewTicketHandler(s)
 
 	mux := http.NewServeMux()
@@ -27,10 +35,10 @@ func main() {
 	mux.HandleFunc("POST /auth/register", authHandler.Register)
 	mux.HandleFunc("POST /auth/login", authHandler.Login)
 
-	mux.HandleFunc("POST /tickets", middleware.RequireAuth(ticketHandler.CreateTicket))
-	mux.HandleFunc("GET /tickets", middleware.RequireAuth(ticketHandler.ListTickets))
-	mux.HandleFunc("GET /tickets/{id}", middleware.RequireAuth(ticketHandler.GetTicket))
-	mux.HandleFunc("PATCH /tickets/{id}/status", middleware.RequireAuth(ticketHandler.UpdateTicketStatus))
+	mux.Handle("POST /tickets", middleware.RequireAuth(tokens)(http.HandlerFunc(ticketHandler.Create)))
+    mux.Handle("GET /tickets", middleware.RequireAuth(tokens)(http.HandlerFunc(ticketHandler.List)))
+    mux.Handle("GET /tickets/{id}", middleware.RequireAuth(tokens)(http.HandlerFunc(ticketHandler.Get)))
+    mux.Handle("PATCH /tickets/{id}/status", middleware.RequireAuth(tokens)(http.HandlerFunc(ticketHandler.UpdateStatus)))
 
 	port := os.Getenv("PORT")
 	if port == "" {
