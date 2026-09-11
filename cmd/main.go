@@ -32,13 +32,17 @@ func main() {
 		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 	})
 
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Ticket system API is running. See /health for status."))
+	})
+
 	mux.HandleFunc("POST /auth/register", authHandler.Register)
 	mux.HandleFunc("POST /auth/login", authHandler.Login)
 
 	mux.Handle("POST /tickets", middleware.RequireAuth(tokens)(http.HandlerFunc(ticketHandler.Create)))
-    mux.Handle("GET /tickets", middleware.RequireAuth(tokens)(http.HandlerFunc(ticketHandler.List)))
-    mux.Handle("GET /tickets/{id}", middleware.RequireAuth(tokens)(http.HandlerFunc(ticketHandler.Get)))
-    mux.Handle("PATCH /tickets/{id}/status", middleware.RequireAuth(tokens)(http.HandlerFunc(ticketHandler.UpdateStatus)))
+	mux.Handle("GET /tickets", middleware.RequireAuth(tokens)(http.HandlerFunc(ticketHandler.List)))
+	mux.Handle("GET /tickets/{id}", middleware.RequireAuth(tokens)(http.HandlerFunc(ticketHandler.Get)))
+	mux.Handle("PATCH /tickets/{id}/status", middleware.RequireAuth(tokens)(http.HandlerFunc(ticketHandler.UpdateStatus)))
 
 	port := os.Getenv("PORT")
 	if port == "" {
