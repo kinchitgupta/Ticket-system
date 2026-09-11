@@ -33,7 +33,7 @@ func main() {
 	})
 
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Ticket system API is running. See /health for status."))
+		w.Write([]byte("Ticket system API running. See /health for status."))
 	})
 
 	mux.HandleFunc("POST /auth/register", authHandler.Register)
